@@ -21,7 +21,7 @@ public class ExcelUtil {
 
 
     /**
-     * @Author LiuFei
+     * @Author Demo_Liu
      * @Date 2019/6/6 14:33
      * @description 根据实体类 和 字段 创建 HSSFWorkbook
      * @Param [configMap map<实体字段,Excel表头>, entityList, rows sheet页行数, fileds 按照实体类字段 最后一行如果数据重复那么不分页, formatByFiled<字段,日期格式>]
