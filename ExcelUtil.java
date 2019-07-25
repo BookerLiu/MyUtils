@@ -19,8 +19,9 @@ import java.util.*;
 **/
 public class ExcelUtil {
 
+
     /**
-     * @Author Demo_Liu
+     * @Author LiuFei
      * @Date 2019/6/6 14:33
      * @description 根据实体类 和 字段 创建 HSSFWorkbook
      * @Param [configMap map<实体字段,Excel表头>, entityList, rows sheet页行数, fileds 按照实体类字段 最后一行如果数据重复那么不分页, formatByFiled<字段,日期格式>]
@@ -37,6 +38,8 @@ public class ExcelUtil {
         }else{
             sheets = size/rows+1;
         }
+        //存储最大列宽  使支持中文
+        Map<Integer,Integer> columnSize = new HashMap();
         // 创建一个居中格式
         HSSFCellStyle style = wb.createCellStyle();
         style.setAlignment(HSSFCellStyle.ALIGN_CENTER);
@@ -46,19 +49,25 @@ public class ExcelUtil {
         HSSFCell cell;
 
         int j=0;
+        int sn = "序号".getBytes().length;
         for(int i=1;i<=sheets;i++){
             sheet = wb.createSheet(i+"");
+            //创建表头
             row = sheet.createRow(0);
             cell = row.createCell(0);
             cell.setCellValue("序号");
             cell.setCellStyle(style);
-            int line = 1;
+            int column = 1;
             for (String s : configMap.keySet()) {
-                cell = row.createCell(line);
-                cell.setCellValue(configMap.get(s));
+                cell = row.createCell(column);
+                String value = configMap.get(s);
+                //筛选表头最大列宽
+                columnSize.put(column,value.getBytes().length);
+                cell.setCellValue(value);
                 cell.setCellStyle(style);
-                line++;
+                column++;
             }
+            //写入数据
             for(int h=1,s=1;j<size && h<=rows;h++,j++,s++){
                 Class<?> entityClass = entityList.get(j).getClass();
                 if(j<size-1 && h==rows && fileds!=null){
@@ -80,16 +89,26 @@ public class ExcelUtil {
                 cell = row.createCell(0);
                 cell.setCellValue(j+1);
                 cell.setCellStyle(style);
-                int line2 = 1;
+                //筛选序号列最大宽度
+                columnSize.put(0,Math.max(String.valueOf(j+1).getBytes().length,sn));
+                column = 1;
                 for (String filed : configMap.keySet()) {
                     String str1 = filed.substring(0, 1);
                     String str2 = filed.substring(1);
                     String methodGet = "get"+str1.toUpperCase() + str2;
-                    cell = row.createCell(line2);
-                    cell.setCellValue(getStrByObj(entityClass.getMethod(methodGet).invoke(entityList.get(j)),formatByFiled.get(filed)));
+                    cell = row.createCell(column);
+                    String value = getStrByObj(entityClass.getMethod(methodGet).invoke(entityList.get(j)),formatByFiled.get(filed));
+                    cell.setCellValue(value);
                     cell.setCellStyle(style);
-                    line2++;
+                    //筛选列最大宽度
+                    columnSize.put(column,Math.max(value.getBytes().length,columnSize.get(column)));
+                    column++;
                 }
+            }
+            //设置自适应列宽
+            for (Integer c : columnSize.keySet()) {
+                int ss = columnSize.get(c)*256;
+                sheet.setColumnWidth(c,ss>30000 ? 30000 : ss);
             }
         }
         return wb;
@@ -107,7 +126,7 @@ public class ExcelUtil {
      * @param dateFormat
      * @return
      */
-    public static String getStrByObj(Object obj, String dateFormat){
+    private static String getStrByObj(Object obj, String dateFormat){
         if(null == obj){
             return "";
         }
@@ -121,7 +140,8 @@ public class ExcelUtil {
         }else{
             return String.valueOf(obj);
         }
-
     }
+
+
 
 }
